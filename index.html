@@ -126,6 +126,31 @@
             .space-y-4 > * + * { margin-top: 0.8rem !important; }
         }
 
+        /* Table sizing for normal 100% zoom view */
+        @media (max-width: 1600px) {
+            table {
+                font-size: 0.85rem;
+            }
+            
+            table td, table th {
+                padding: 6px 6px !important;
+            }
+            
+            .overflow-x-auto table {
+                min-width: auto !important;
+            }
+        }
+
+        @media (max-width: 1366px) {
+            table {
+                font-size: 0.8rem;
+            }
+            
+            table td, table th {
+                padding: 5px 4px !important;
+            }
+        }
+
         /* Fixed Column Widths */
         .col-date { width: 130px; }
         .col-side { width: 100px; }
@@ -316,7 +341,7 @@
                         <button onclick="openTradeModal('CNC')" class="h-10 px-6 text-xs font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition-all" title="Add a new CNC holding">+ Add Asset</button>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left table-fixed min-w-[1000px]">
+                        <table class="w-full text-left table-auto">
                             <thead class="table-header">
                                 <tr>
                                     <th class="px-3 py-3 text-center" style="width: 32px;"></th>
@@ -349,7 +374,7 @@
                         <button onclick="openTradeModal('MIS')" class="h-10 px-6 text-xs font-bold text-white bg-orange-600 rounded-xl hover:bg-orange-500 shadow-lg shadow-orange-600/20 transition-all" title="Add a new intraday trade">+ Log Trade</button>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left table-fixed min-w-[1000px]">
+                        <table class="w-full text-left table-auto">
                             <thead class="table-header">
                                 <tr>
                                     <th class="px-3 py-3 text-center" style="width: 32px;"></th>
