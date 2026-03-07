@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CapitalSync Pro Terminal - Institutional grade trading ledger for Indian stocks. Track CNC holdings and intraday MIS trades with real-time P&L analytics.">
+    <meta name="theme-color" content="#6366f1">
+    <title>CapitalSync | Pro Terminal v2.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
+        
+        :root {
+            --brand: #6366f1;
+            --bg: #0f172a;
+            --card: #1e293b;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #0b0f1a;
+            color: #f1f5f9;
+            letter-spacing: -0.01em;
+        }
+
+        .glass-card { 
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+            background: rgba(30, 41, 59, 0.9);
+        }
+
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        input[type="number"], input[type="text"], input[type="date"], select {
+            font-family: inherit;
+        }
+        
+        input[type="date"] {
+            cursor: pointer;
+        }
+        
+        .table-header {
+            background-color: rgba(15, 23, 42, 0.5);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            font-weight: 800;
+            color: #64748b;
+            letter-spacing: 0.1em;
+        }
+
+        .input-minimal {
+            background: transparent;
+            border-radius: 6px;
+            padding: 4px 8px;
+            outline: none;
+            width: 100%;
+            color: inherit;
+            transition: all 0.2s;
+        }
+        
+        .input-minimal:focus {
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.4);
+        }
+
+        .radial-progress circle {
+            fill: none;
+            stroke-width: 10;
+            stroke-linecap: round;
+            transition: stroke-dasharray 1s ease-in-out;
+        }
+        
+        .circle-bg { stroke: rgba(255,255,255,0.03); }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        /* Fixed Column Widths */
+        .col-date { width: 130px; }
+        .col-side { width: 100px; }
+        .col-qty { width: 90px; }
+        .col-price { width: 110px; }
+        .col-pnl { width: 160px; }
+
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .autocomplete-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s;
+        }
+
+        .autocomplete-item:hover {
+            background: rgba(99, 102, 241, 0.2);
+        }
+
+        .autocomplete-item-symbol {
+            font-weight: bold;
+            color: #6366f1;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .autocomplete-item-name {
+            font-size: 0.85em;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+        
+        table {
+            border-collapse: collapse;
+        }
+        
+        td {
+            vertical-align: middle;
+            padding: 8px;
+        }
+        
+        th {
+            vertical-align: middle;
+        }
+        
+        .drag-handle {
+            text-align: center;
+            flex: 0 0 auto;
+            user-select: none;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 lg:p-12">
+    <div class="max-w-[1600px] mx-auto">
+        
+        <!-- Top Nav / Branding -->
+        <header class="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
+            <div>
+                <div class="flex items-center gap-4 mb-2">
+                    <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-500/20">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-extrabold tracking-tighter gradient-text">CAPITAL<span class="text-indigo-500">SYNC</span></h1>
+                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Institutional Grade Ledger v2.0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <div class="flex flex-col items-end">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase">System Status</span>
+                    <span class="text-xs font-bold text-emerald-400 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Terminal Active
+                    </span>
+                </div>
+                <div class="w-px h-8 bg-slate-700/50"></div>
+                <button onclick="exportData()" class="h-10 px-5 text-xs font-bold text-slate-300 bg-slate-800/50 border border-slate-700 rounded-lg hover:bg-slate-700 transition-all" title="Export all trades to CSV">Export CSV</button>
+                <button onclick="resetData()" class="h-10 px-5 text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg hover:bg-rose-500/20 transition-all" title="Delete all data">Wipe Terminal</button>
+            </div>
+        </header>
+
+        <!-- Trade Input Modal -->
+        <div id="trade-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm p-4">
+            <div class="glass-card p-8 w-full max-w-md">
+                <h3 class="text-lg font-bold mb-6 text-slate-100">Add New Trade</h3>
+                <div class="space-y-5">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-2" for="modal-stock">Security / Symbol</label>
+                        <div class="relative">
+                            <input type="text" id="modal-stock" autocomplete="off" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="e.g., TCS, RELIANCE" oninput="filterStocks(this.value)" aria-label="Stock symbol">
+                            <div id="stock-dropdown" class="hidden autocomplete-dropdown"></div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-2" for="modal-action">Action</label>
+                            <select id="modal-action" class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" aria-label="Trade action">
+                                <option value="Buy">BUY</option>
+                                <option value="Sell">SELL</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-2" for="modal-qty">Quantity</label>
+                            <input type="number" id="modal-qty" min="1" class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="0" aria-label="Trade quantity">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-2" for="modal-price">Entry Price</label>
+                            <input type="number" id="modal-price" min="0" step="0.01" class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="0.00" aria-label="Entry price">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-2" for="modal-current">Current Price</label>
+                            <input type="number" id="modal-current" min="0" step="0.01" class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="0.00" aria-label="Current market price">
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-8">
+                    <button onclick="closeTradeModal()" class="flex-1 px-4 py-2.5 text-xs font-bold text-slate-300 bg-slate-800 rounded-lg hover:bg-slate-700 transition">Cancel</button>
+                    <button onclick="submitTradeModal()" class="flex-1 px-4 py-2.5 text-xs font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-500 transition">Add Trade</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI Grid -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div class="glass-card p-8">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4" id="label-capital">Initial Capital</p>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-slate-600 font-bold text-xl" aria-hidden="true">₹</span>
+                    <input type="number" id="capital-deployed" value="0" min="0" step="0.01" oninput="updateSummary()" class="text-3xl font-bold text-slate-100 bg-transparent outline-none w-full focus:ring-2 focus:ring-indigo-500 rounded px-2" placeholder="0" aria-labelledby="label-capital">
+                </div>
+            </div>
+            <div class="glass-card p-8">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4" id="label-holdings">Market Valuation</p>
+                <div class="flex items-baseline gap-2 text-emerald-400">
+                    <span class="font-bold text-xl opacity-60" aria-hidden="true">₹</span>
+                    <input type="number" id="holdings-value" value="0" min="0" step="0.01" oninput="updateSummary()" class="text-3xl font-bold bg-transparent outline-none w-full focus:ring-2 focus:ring-emerald-500 rounded px-2" placeholder="0" aria-labelledby="label-holdings">
+                </div>
+            </div>
+            <div class="glass-card p-8">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4" id="label-cash">Settled Cash</p>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-slate-600 font-bold text-xl" aria-hidden="true">₹</span>
+                    <input type="number" id="free-cash" value="0" min="0" step="0.01" oninput="updateSummary()" class="text-3xl font-bold text-slate-100 bg-transparent outline-none w-full focus:ring-2 focus:ring-indigo-500 rounded px-2" placeholder="0" aria-labelledby="label-cash">
+                </div>
+            </div>
+            <div id="pnl-card" class="p-8 rounded-[24px] border border-white/5 transition-all duration-500 bg-slate-800">
+                <div class="flex justify-between items-start mb-4">
+                    <p class="text-[10px] font-black text-white/60 uppercase tracking-widest">Aggregate P&L</p>
+                    <span id="pnl-percentage" class="badge bg-white/10 text-slate-300 text-[9px]">0%</span>
+                </div>
+                <div class="flex items-baseline gap-2 text-white">
+                    <span id="pnl-sign" class="font-bold text-xl opacity-60">₹</span>
+                    <span id="total-pnl" class="text-3xl font-bold tracking-tight">0.00</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Layout -->
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+            
+            <div class="xl:col-span-8 space-y-8">
+                <!-- CNC Section -->
+                <div class="glass-card overflow-hidden">
+                    <div class="px-8 py-6 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/5">
+                        <div>
+                            <div class="flex items-center gap-3 mb-1">
+                                <span class="badge bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">CNC HOLDINGS</span>
+                                <h2 class="text-base font-bold">Long-Term Portfolio</h2>
+                            </div>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Asset accumulation and wealth building tracker</p>
+                        </div>
+                        <button onclick="openTradeModal('CNC')" class="h-10 px-6 text-xs font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition-all" title="Add a new CNC holding">+ Add Asset</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left table-fixed min-w-[1000px]">
+                            <thead class="table-header">
+                                <tr>
+                                    <th class="px-3 py-3 text-center" style="width: 32px;"></th>
+                                    <th class="px-3 py-3 text-center" style="width: 40px;">#</th>
+                                    <th class="px-3 py-3">Added</th>
+                                    <th class="px-3 py-3">Security</th>
+                                    <th class="px-3 py-3 text-center">Side</th>
+                                    <th class="px-3 py-3 text-right">Units</th>
+                                    <th class="px-3 py-3 text-right">Avg Cost</th>
+                                    <th class="px-3 py-3 text-right text-indigo-400">CMP</th>
+                                    <th class="px-4 py-3 text-right">Unrealized</th>
+                                    <th class="px-2 py-3" style="width: 32px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="cnc-body" class="divide-y divide-white/5"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- MIS Section -->
+                <div class="glass-card overflow-hidden">
+                    <div class="px-8 py-6 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/5">
+                        <div>
+                            <div class="flex items-center gap-3 mb-1">
+                                <span class="badge bg-orange-500/20 text-orange-400 border border-orange-500/30">MIS • INTRADAY</span>
+                                <h2 class="text-base font-bold">Day Trading Logs</h2>
+                            </div>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Session based margin trades and scalp history</p>
+                        </div>
+                        <button onclick="openTradeModal('MIS')" class="h-10 px-6 text-xs font-bold text-white bg-orange-600 rounded-xl hover:bg-orange-500 shadow-lg shadow-orange-600/20 transition-all" title="Add a new intraday trade">+ Log Trade</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left table-fixed min-w-[1000px]">
+                            <thead class="table-header">
+                                <tr>
+                                    <th class="px-3 py-3 text-center" style="width: 32px;"></th>
+                                    <th class="px-3 py-3 text-center" style="width: 40px;">#</th>
+                                    <th class="px-3 py-3">Session Date</th>
+                                    <th class="px-3 py-3">Symbol</th>
+                                    <th class="px-3 py-3 text-center">Action</th>
+                                    <th class="px-3 py-3 text-right">Qty</th>
+                                    <th class="px-3 py-3 text-right">Entry</th>
+                                    <th class="px-3 py-3 text-right text-orange-400">Exit</th>
+                                    <th class="px-4 py-3 text-right">Net P&L</th>
+                                    <th class="px-2 py-3" style="width: 32px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="mis-body" class="divide-y divide-white/5"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Chart Distribution Section -->
+                <div class="glass-card p-8">
+                    <div class="mb-6">
+                        <h2 class="text-lg font-bold">Profit/Loss Distribution</h2>
+                        <p class="text-xs text-slate-500 font-medium">Visualizing capital realization trends across your session timeline</p>
+                    </div>
+                    <div class="h-[300px] w-full">
+                        <canvas id="pnlChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Sidebar -->
+            <div class="xl:col-span-4 space-y-8">
+                
+                <!-- Circular Gauges -->
+                <div class="glass-card p-8">
+                    <h3 class="text-[11px] font-black text-white uppercase tracking-widest mb-8 flex items-center gap-2">
+                        <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div> Analytics Dashboard
+                    </h3>
+                    <div class="grid grid-cols-2 gap-8">
+                        <div class="text-center flex flex-col items-center">
+                            <div class="relative flex items-center justify-center mb-6">
+                                <svg width="100" height="100" class="radial-progress">
+                                    <circle class="circle-bg" cx="50" cy="50" r="42"></circle>
+                                    <circle id="util-bar" class="stroke-indigo-500" cx="50" cy="50" r="42" stroke-dasharray="0 264" transform="rotate(-90 50 50)"></circle>
+                                </svg>
+                                <span id="util-val" class="absolute text-sm font-bold mono text-slate-100">0%</span>
+                            </div>
+                            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Capital Utilization</h3>
+                        </div>
+                        <div class="text-center flex flex-col items-center">
+                            <div class="relative flex items-center justify-center mb-6">
+                                <svg width="100" height="100" class="radial-progress">
+                                    <circle class="circle-bg" cx="50" cy="50" r="42"></circle>
+                                    <circle id="winrate-bar" class="stroke-emerald-400" cx="50" cy="50" r="42" stroke-dasharray="0 264" transform="rotate(-90 50 50)"></circle>
+                                </svg>
+                                <span id="winrate-val" class="absolute text-sm font-bold mono text-slate-100">0%</span>
+                            </div>
+                            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Edge Ratio</h3>
+                        </div>
+                        <div class="text-center flex flex-col items-center">
+                            <div class="relative flex items-center justify-center mb-6">
+                                <svg width="100" height="100" class="radial-progress">
+                                    <circle class="circle-bg" cx="50" cy="50" r="42"></circle>
+                                    <circle id="exposure-bar" class="stroke-orange-400" cx="50" cy="50" r="42" stroke-dasharray="0 264" transform="rotate(-90 50 50)"></circle>
+                                </svg>
+                                <span id="exposure-val" class="absolute text-sm font-bold mono text-slate-100">0%</span>
+                            </div>
+                            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Risk Exposure</h3>
+                        </div>
+                        <div class="text-center flex flex-col items-center">
+                            <div class="relative flex items-center justify-center mb-6">
+                                <svg width="100" height="100" class="radial-progress">
+                                    <circle class="circle-bg" cx="50" cy="50" r="42"></circle>
+                                    <circle id="target-bar" class="stroke-white" cx="50" cy="50" r="42" stroke-dasharray="0 264" transform="rotate(-90 50 50)"></circle>
+                                </svg>
+                                <span id="target-val" class="absolute text-sm font-bold mono text-slate-100">0%</span>
+                            </div>
+                            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Goal Velocity</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fee & Fine Tracker -->
+                <div class="glass-card p-8">
+                    <h3 class="text-[11px] font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+                         <div class="w-1.5 h-1.5 rounded-full bg-rose-500"></div> Fee & Fine Tracker
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center gap-3">
+                            <label for="fee-gateway" class="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex-1">Payment Gateway Fees</label>
+                            <input type="number" id="fee-gateway" value="0" min="0" oninput="updateSummary()" step="0.01" class="bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 w-24 text-right mono outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="0.00">
+                        </div>
+                        <div class="flex justify-between items-center gap-3">
+                            <label for="fee-squareoff" class="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex-1">Auto Square-off Fines</label>
+                            <input type="number" id="fee-squareoff" value="0" min="0" oninput="updateSummary()" step="0.01" class="bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 w-24 text-right mono outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="0.00">
+                        </div>
+                        <div class="flex justify-between items-center gap-3">
+                            <label for="fee-dp" class="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex-1">DP Charges</label>
+                            <input type="number" id="fee-dp" value="0" min="0" oninput="updateSummary()" step="0.01" class="bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 w-24 text-right mono outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="0.00">
+                        </div>
+                        <div class="flex justify-between items-center gap-3">
+                            <label for="fee-trade" class="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex-1">Trade Fee</label>
+                            <input type="number" id="fee-trade" value="0" min="0" oninput="updateSummary()" step="0.01" class="bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 w-24 text-right mono outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="0.00">
+                        </div>
+                        <div class="pt-4 border-t border-white/10 flex justify-between items-center">
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Leakage</span>
+                            <span class="text-lg font-bold text-orange-400 mono" id="total-leaks">₹0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="glass-card p-8">
+                    <h3 class="text-[11px] font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div> Trading Intelligence
+                    </h3>
+                    <div id="lessons-list" class="space-y-2.5 mb-6 max-h-48 overflow-y-auto"></div>
+                    <div class="relative">
+                        <input type="text" id="lesson-input" class="w-full bg-white/5 border border-white/10 rounded-lg pl-4 pr-10 py-2.5 text-xs font-medium text-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="Add session insight..." aria-label="Add trading insight">
+                        <button onclick="addLesson()" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-indigo-600 text-white rounded-lg flex items-center justify-center hover:bg-indigo-500 transition font-bold text-lg leading-none" title="Add insight (Enter key also works)" aria-label="Add lesson">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================================
+        // CAPITALYNC PRO TERMINAL v2.0 - Main Application Script
+        // ============================================================================
+        
+        // DOM Cache - performance optimization to avoid repeated queries
+        const domCache = {};
+        
+        function cacheDOM() {
+            domCache.capitalInput = document.getElementById('capital-deployed');
+            domCache.holdingsInput = document.getElementById('holdings-value');
+            domCache.cashInput = document.getElementById('free-cash');
+            domCache.cncBody = document.getElementById('cnc-body');
+            domCache.misBody = document.getElementById('mis-body');
+            domCache.pnlChart = document.getElementById('pnlChart');
+            domCache.lessonsList = document.getElementById('lessons-list');
+            domCache.lessonInput = document.getElementById('lesson-input');
+            domCache.tradeModal = document.getElementById('trade-modal');
+            domCache.stockInput = document.getElementById('modal-stock');
+            domCache.stockDropdown = document.getElementById('stock-dropdown');
+            domCache.pnlCard = document.getElementById('pnl-card');
+        }
+        
+        // Comprehensive list of Indian stocks
+        const stocksList = [
+            { symbol: 'TCS', name: 'Tata Consultancy Services' },
+            { symbol: 'INFY', name: 'Infosys' },
+            { symbol: 'WIPRO', name: 'Wipro' },
+            { symbol: 'RELIANCE', name: 'Reliance Industries' },
+            { symbol: 'HDFC', name: 'HDFC Bank' },
+            { symbol: 'ICICIBANK', name: 'ICICI Bank' },
+            { symbol: 'AXISBANK', name: 'Axis Bank' },
+            { symbol: 'SBIN', name: 'State Bank of India' },
+            { symbol: 'MARUTI', name: 'Maruti Suzuki' },
+            { symbol: 'BAJAJFINSV', name: 'Bajaj Finserv' },
+            { symbol: 'LT', name: 'Larsen & Toubro' },
+            { symbol: 'ASIANPAINT', name: 'Asian Paints' },
+            { symbol: 'KOTAKBANK', name: 'Kotak Mahindra Bank' },
+            { symbol: 'HUL', name: 'Hindustan Unilever' },
+            { symbol: 'ITC', name: 'ITC' },
+            { symbol: 'SUNPHARMA', name: 'Sun Pharmaceutical' },
+            { symbol: 'DMART', name: 'Avenue Supermarts' },
+            { symbol: 'NESTLEIND', name: 'Nestlé India' },
+            { symbol: 'INDIANOIL', name: 'Indian Oil Corporation' },
+            { symbol: 'BPCL', name: 'Bharat Petroleum' },
+            { symbol: 'HDFCBANK', name: 'HDFC Bank' },
+            { symbol: 'INDIABULLS', name: 'Indiabulls Housing Finance' },
+            { symbol: 'BAJFINANCE', name: 'Bajaj Finance' },
+            { symbol: 'ULTRACEMCO', name: 'UltraTech Cement' },
+            { symbol: 'TATASTEEL', name: 'Tata Steel' },
+            { symbol: 'HINDALCO', name: 'Hindalco Industries' },
+            { symbol: 'HEROMOTOCO', name: 'Hero MotoCorp' },
+            { symbol: 'EICHER', name: 'Eicher Motors' },
+            { symbol: 'JSWSTEEL', name: 'JSW Steel' },
+            { symbol: 'GRASIM', name: 'Grasim Industries' },
+            { symbol: 'BHARTIARTL', name: 'Bharti Airtel' },
+            { symbol: 'IDEA', name: 'Idea Cellular' },
+            { symbol: 'VODAFONE', name: 'Vodafone Idea' },
+            { symbol: 'VBL', name: 'Varun Beverages' },
+            { symbol: 'PFC', name: 'Power Finance Corporation' },
+            { symbol: 'POWERGRID', name: 'Power Grid Corporation' },
+            { symbol: 'NTPC', name: 'NTPC' },
+            { symbol: 'COAL', name: 'Coal India' },
+            { symbol: 'NMDC', name: 'NMDC' },
+            { symbol: 'SBILIFE', name: 'SBI Life Insurance' },
+            { symbol: 'HDFCLIFE', name: 'HDFC Life Insurance' },
+            { symbol: 'ICICIL', name: 'ICICI Lombard' },
+            { symbol: 'LUPIN', name: 'Lupin Pharmaceuticals' },
+            { symbol: 'DRREDDY', name: 'Dr. Reddy\'s Laboratories' },
+            { symbol: 'CIPLA', name: 'Cipla' },
+            { symbol: 'DIVISLAB', name: 'Divi\'s Laboratories' },
+            { symbol: 'BIOCON', name: 'Biocon' },
+            { symbol: 'ZYDUSLIFE', name: 'Zydus Lifesciences' },
+            { symbol: 'AUBANK', name: 'AU Small Finance Bank' },
+            { symbol: 'INDIGO', name: 'InterGlobe Aviation' },
+            { symbol: 'SECTORALETH', name: 'JSW Energy' },
+            { symbol: 'JSWENERGY', name: 'JSW Energy' },
+            { symbol: 'ADANIPORTS', name: 'Adani Ports and SEZ' },
+            { symbol: 'ADANIGREEN', name: 'Adani Green Energy' },
+            { symbol: 'ADANIPOWER', name: 'Adani Power' },
+            { symbol: 'ADANITRANS', name: 'Adani Transmission' },
+            { symbol: 'APOLLOHOSP', name: 'Apollo Hospitals' },
+            { symbol: 'MAXHEALTH', name: 'Max Healthcare Institute' },
+            { symbol: 'FORTIS', name: 'Fortis Healthcare' },
+            { symbol: 'MINDTREE', name: 'Mindtree' },
+            { symbol: 'LTTS', name: 'L&T Technology Services' },
+            { symbol: 'MPHASIS', name: 'Mphasis' },
+            { symbol: 'TECHM', name: 'Tech Mahindra' },
+            { symbol: 'TATA', name: 'Tata Motors' },
+            { symbol: 'M&M', name: 'Mahindra & Mahindra' },
+            { symbol: 'BAJAJ', name: 'Bajaj Auto' },
+            { symbol: 'TVSMOTORS', name: 'TVS Motor Company' },
+            { symbol: 'BOSCHLTD', name: 'Bosch' },
+            { symbol: 'ESCORTS', name: 'Escorts' },
+            { symbol: 'MOTHERSON', name: 'Motherson Sumi Systems' },
+            { symbol: 'AMBUJACEM', name: 'Ambuja Cement' },
+            { symbol: 'SHREECEM', name: 'Shree Cement' },
+            { symbol: 'HEIDELBERG', name: 'Heidelberg Cement' },
+            { symbol: 'WEL', name: 'Welspun Corporation' },
+            { symbol: 'BAJAJCORP', name: 'Bajaj Corporation' },
+            { symbol: 'COLPAL', name: 'Colgate-Palmolive' },
+            { symbol: 'MARICO', name: 'Marico' },
+            { symbol: 'BRITANNIA', name: 'Britannia' },
+            { symbol: 'DAICHI', name: 'Daichi' },
+            { symbol: 'HINDUNILVR', name: 'Hindustan Unilever' },
+            { symbol: 'PAGEIND', name: 'Page Industries' },
+            { symbol: 'RECLCAP', name: 'REC' },
+            { symbol: 'CUMMINSIND', name: 'Cummins India' },
+            { symbol: 'TIMKEN', name: 'Timken Company' },
+            { symbol: 'RADICO', name: 'Radico Khaitan' },
+            { symbol: 'PERNOD', name: 'Pernod Ricard India' }
+        ];
+
+        // Application state
+        let trades = [];
+        let lessons = [];
+        let pnlChart = null;
+        let draggedIndex = null;
+        let currentModalType = null;
+        
+        // Initialize app
+        function initializeApp() {
+            loadDataFromStorage();
+            cacheDOM();
+            initChart();
+            renderTrades();
+            renderLessons();
+            updateSummary();
+            attachEventListeners();
+        }
+        
+        function loadDataFromStorage() {
+            trades = JSON.parse(localStorage.getItem('terminal_trades')) || [];
+            lessons = JSON.parse(localStorage.getItem('terminal_lessons')) || [];
+        }
+
+        // CHART MANAGEMENT
+        function initChart() {
+            const ctx = domCache.pnlChart.getContext('2d');
+            pnlChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Realized P&L',
+                        data: [],
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#6366f1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } } },
+                        x: { grid: { display: false }, ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        function updateChartData() {
+            if (!pnlChart) return;
+            const sortedTrades = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const labels = sortedTrades.map(t => new Date(t.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));
+            const data = sortedTrades.map(t => (t.qty * (t.currentPrice || 0)) - (t.qty * t.price) - (t.charges || 0));
+            
+            pnlChart.data.labels = labels;
+            pnlChart.data.datasets[0].data = data;
+            pnlChart.update();
+        }
+        
+        // TRADE RENDERING
+        function calculateTradeMetrics(trade) {
+            const pnl = (trade.qty * (trade.currentPrice || 0)) - (trade.qty * trade.price) - (trade.charges || 0);
+            return { pnl };
+        }
+
+        function renderTrades() {
+            domCache.cncBody.innerHTML = '';
+            domCache.misBody.innerHTML = '';
+            
+            let cncCount = 1;
+            let misCount = 1;
+            
+            trades.forEach((trade, index) => {
+                const { pnl } = calculateTradeMetrics(trade);
+                const row = document.createElement('tr');
+                row.className = "hover:bg-white/[0.02] transition-colors text-[11px] text-slate-300 cursor-grab active:cursor-grabbing";
+                row.draggable = true;
+                row.dataset.index = index;
+                
+                row.addEventListener('dragstart', handleDragStart);
+                row.addEventListener('dragover', handleDragOver);
+                row.addEventListener('drop', handleDrop);
+                row.addEventListener('dragend', handleDragEnd);
+                
+                const isCnc = trade.type === 'CNC';
+                const rowNumber = isCnc ? cncCount : misCount;
+                
+                row.innerHTML = `
+                    <td class="px-3 py-3 text-center text-slate-600 cursor-grab active:cursor-grabbing select-none drag-handle" style="user-select: none; width: 32px;">⋮</td>
+                    <td class="px-3 py-3 text-center text-slate-600 mono font-bold" style="width: 40px;">${rowNumber}</td>
+                    <td class="px-3 py-3"><input type="date" value="${trade.date}" class="bg-transparent text-slate-400 font-bold outline-none w-full cursor-pointer" onchange="updateTrade(${index}, 'date', this.value)"></td>
+                    <td class="px-3 py-3 font-bold uppercase tracking-tight text-slate-200">${trade.stock}</td>
+                    <td class="px-3 py-3 text-center font-black ${trade.action === 'Buy' ? 'text-indigo-400' : 'text-orange-400'}">${trade.action === 'Buy' ? 'BUY' : 'SELL'}</td>
+                    <td class="px-3 py-3 text-right mono">${trade.qty}</td>
+                    <td class="px-3 py-3 text-right mono">₹${parseFloat(trade.price).toFixed(2)}</td>
+                    <td class="px-3 py-3 text-right mono font-bold ${isCnc ? 'text-indigo-400' : 'text-orange-400'}">₹${parseFloat(trade.currentPrice || 0).toFixed(2)}</td>
+                    <td class="px-4 py-3 text-right font-bold mono ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">₹${pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td class="px-2 py-3 text-center" style="width: 32px;"><button onclick="removeTrade(${index})" class="text-slate-600 hover:text-rose-500 font-bold text-lg">×</button></td>
+                `;
+                
+                if (isCnc) {
+                    domCache.cncBody.appendChild(row);
+                    cncCount++;
+                } else {
+                    domCache.misBody.appendChild(row);
+                    misCount++;
+                }
+            });
+            updateChartData();
+            save();
+        }
+        
+        function handleDragStart(e) {
+            draggedIndex = parseInt(e.target.closest('tr').dataset.index);
+            e.dataTransfer.effectAllowed = 'move';
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const row = e.target.closest('tr');
+            if (row) row.style.opacity = '0.5';
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            const targetIndex = parseInt(e.target.closest('tr').dataset.index);
+            
+            if (draggedIndex !== null && draggedIndex !== targetIndex) {
+                const draggedTrade = trades[draggedIndex];
+                trades.splice(draggedIndex, 1);
+                trades.splice(targetIndex, 0, draggedTrade);
+                renderTrades();
+                updateSummary();
+            }
+        }
+        
+        function handleDragEnd(e) {
+            document.querySelectorAll('tr').forEach(row => row.style.opacity = '1');
+            draggedIndex = null;
+        }
+        
+        // MODAL MANAGEMENT
+        function openTradeModal(type) {
+            currentModalType = type;
+            domCache.tradeModal.classList.remove('hidden');
+            domCache.stockInput.value = '';
+            document.getElementById('modal-action').value = 'Buy';
+            document.getElementById('modal-qty').value = '';
+            document.getElementById('modal-price').value = '';
+            document.getElementById('modal-current').value = '';
+            domCache.stockDropdown.classList.add('hidden');
+            domCache.stockInput.focus();
+            domCache.tradeModal.setAttribute('role', 'dialog');
+            domCache.tradeModal.setAttribute('aria-modal', 'true');
+        }
+        
+        function filterStocks(query) {
+            const trimmedQuery = query.trim().toUpperCase();
+            
+            if (!trimmedQuery) {
+                domCache.stockDropdown.classList.add('hidden');
+                return;
+            }
+            
+            const filtered = stocksList.filter(stock => 
+                stock.symbol.includes(trimmedQuery) || 
+                stock.name.toUpperCase().includes(trimmedQuery)
+            ).slice(0, 8);
+            
+            if (filtered.length === 0) {
+                domCache.stockDropdown.classList.add('hidden');
+                return;
+            }
+            
+            domCache.stockDropdown.innerHTML = filtered.map(stock => `
+                <div class="autocomplete-item" role="option" onclick="selectStock('${stock.symbol}')" tabindex="0" onkeydown="if(event.key==='Enter') selectStock('${stock.symbol}')">
+                    <div class="autocomplete-item-symbol">${escapeHtml(stock.symbol)}</div>
+                    <div class="autocomplete-item-name">${escapeHtml(stock.name)}</div>
+                </div>
+            `).join('');
+            
+            domCache.stockDropdown.classList.remove('hidden');
+            domCache.stockDropdown.setAttribute('role', 'listbox');
+        }
+        
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+        
+        function selectStock(symbol) {
+            domCache.stockInput.value = symbol;
+            domCache.stockDropdown.classList.add('hidden');
+            document.getElementById('modal-qty').focus();
+        }
+        
+        function closeTradeModal() {
+            domCache.tradeModal.classList.add('hidden');
+            domCache.stockDropdown.classList.add('hidden');
+            currentModalType = null;
+            domCache.tradeModal.removeAttribute('aria-modal');
+        }
+        
+        function submitTradeModal() {
+            const stock = domCache.stockInput.value.trim().toUpperCase();
+            const action = document.getElementById('modal-action').value;
+            const qty = parseFloat(document.getElementById('modal-qty').value) || 0;
+            const price = parseFloat(document.getElementById('modal-price').value) || 0;
+            const current = parseFloat(document.getElementById('modal-current').value) || 0;
+            
+            // Validation
+            const errors = [];
+            if (!stock) errors.push('Security symbol is required');
+            if (qty <= 0) errors.push('Quantity must be greater than 0');
+            if (price < 0) errors.push('Entry price cannot be negative');
+            if (current < 0) errors.push('Current price cannot be negative');
+            
+            if (errors.length > 0) {
+                alert('Please fix the following errors:\n' + errors.join('\n'));
+                return;
+            }
+            
+            addTradeWithValues(currentModalType, stock, action, qty, price, current);
+            closeTradeModal();
+        }
+
+        function updateTrade(index, field, value, fullRefresh = false) {
+            trades[index][field] = (['qty', 'price', 'charges', 'currentPrice'].includes(field)) ? parseFloat(value) || 0 : value;
+            updateSummary();
+            save();
+        }
+        
+        function addTradeWithValues(type, stock, action, qty, price, currentPrice) {
+            trades.push({ 
+                date: new Date().toISOString().split('T')[0], 
+                stock: stock || '', 
+                type: type, 
+                action: action || 'Buy', 
+                qty: parseFloat(qty) || 0, 
+                price: parseFloat(price) || 0, 
+                currentPrice: parseFloat(currentPrice) || 0, 
+                charges: 0 
+            });
+            renderTrades();
+            updateSummary();
+        }
+
+        function addTradeRow(type) {
+            trades.push({ date: new Date().toISOString().split('T')[0], stock: '', type: type, action: 'Buy', qty: 0, price: 0, currentPrice: 0, charges: 0 });
+            renderTrades();
+            updateSummary();
+        }
+
+        function removeTrade(index) { trades.splice(index, 1); renderTrades(); updateSummary(); }
+
+        // SUMMARY & CALCULATIONS
+        function updateSummary() {
+            const deployed = parseFloat(domCache.capitalInput.value) || 0;
+            const manualHoldings = parseFloat(domCache.holdingsInput.value) || 0;
+            const manualCash = parseFloat(domCache.cashInput.value) || 0;
+            const totalLeaks = (parseFloat(document.getElementById('fee-gateway').value) || 0) + 
+                               (parseFloat(document.getElementById('fee-squareoff').value) || 0) + 
+                               (parseFloat(document.getElementById('fee-dp').value) || 0) + 
+                               (parseFloat(document.getElementById('fee-trade').value) || 0);
+            
+            document.getElementById('total-leaks').innerText = `₹${totalLeaks.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+
+            let totalTablePnl = 0; let misExposure = 0; let cncExposure = 0; let wins = 0; let activeTrades = 0;
+
+            trades.forEach(trade => {
+                const exposure = trade.qty * (trade.currentPrice || 0);
+                const invested = trade.qty * trade.price;
+                const pnl = exposure - invested - (trade.charges || 0);
+                totalTablePnl += pnl;
+                if (trade.type === 'MIS') misExposure += exposure; else cncExposure += exposure;
+                if (trade.qty > 0) { activeTrades++; if (pnl > 0) wins++; }
+            });
+
+            const currentExposure = misExposure + cncExposure;
+            const netPnl = (manualHoldings + manualCash - deployed) + totalTablePnl - totalLeaks;
+            const pnlPercent = deployed > 0 ? (netPnl / deployed * 100) : 0;
+            const circ = 2 * Math.PI * 42; 
+            
+            const setBar = (id, val) => document.getElementById(id).style.strokeDasharray = `${(Math.min(100, val) / 100) * circ} ${circ}`;
+
+            const utilPercent = deployed > 0 ? (currentExposure / deployed) * 100 : 0;
+            setBar('util-bar', utilPercent); document.getElementById('util-val').innerText = `${Math.round(utilPercent)}%`;
+
+            const winRate = activeTrades > 0 ? (wins / activeTrades) * 100 : 0;
+            setBar('winrate-bar', winRate); document.getElementById('winrate-val').innerText = `${Math.round(winRate)}%`;
+
+            const exposureRatio = currentExposure > 0 ? (misExposure / currentExposure) * 100 : 0;
+            setBar('exposure-bar', exposureRatio); document.getElementById('exposure-val').innerText = `${Math.round(exposureRatio)}%`;
+
+            const targetVal = Math.max(0, (netPnl / 10000) * 100); // Default 10k target
+            setBar('target-bar', targetVal);
+            document.getElementById('target-val').innerText = `${Math.round(targetVal)}%`;
+
+            document.getElementById('total-pnl').innerText = Math.abs(netPnl).toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('pnl-sign').innerText = netPnl >= 0 ? '₹' : '- ₹';
+            document.getElementById('pnl-percentage').innerText = `${netPnl >= 0 ? '+' : ''}${pnlPercent.toFixed(2)}% ROI`;
+            document.getElementById('pnl-percentage').setAttribute('aria-label', `P & L percentage: ${pnlPercent.toFixed(2)}% ROI`);
+            
+            domCache.pnlCard.className = netPnl >= 0 ? "p-8 rounded-[24px] border border-emerald-500/20 bg-emerald-500/10 shadow-lg shadow-emerald-500/5 transition-all" : "p-8 rounded-[24px] border border-rose-500/20 bg-rose-500/10 shadow-lg shadow-rose-500/5 transition-all";
+            
+            save();
+        }
+
+        // LESSONS MANAGEMENT
+        function renderLessons() {
+            domCache.lessonsList.innerHTML = '';
+            lessons.forEach((l, i) => {
+                const d = document.createElement('div');
+                d.className = "text-[11px] p-4 bg-white/5 rounded-2xl flex justify-between items-start gap-3 text-slate-400 border border-white/5 italic";
+                d.innerHTML = `<span>"${escapeHtml(l)}"</span><button class="text-slate-600 hover:text-rose-500 font-bold" onclick="removeLesson(${i})" aria-label="Delete lesson: ${escapeHtml(l)}">×</button>`;
+                domCache.lessonsList.appendChild(d);
+            });
+        }
+
+        function addLesson() {
+            const text = domCache.lessonInput.value.trim();
+            if (text.length > 0) {
+                if (text.length > 500) {
+                    alert('Lesson cannot exceed 500 characters');
+                    return;
+                }
+                lessons.push(text);
+                domCache.lessonInput.value = '';
+                renderLessons();
+                save();
+            }
+        }
+
+        function removeLesson(i) {
+            lessons.splice(i, 1);
+            renderLessons();
+            save();
+        }
+        
+        // STORAGE MANAGEMENT
+        function save() {
+            try {
+                localStorage.setItem('terminal_trades', JSON.stringify(trades));
+                localStorage.setItem('terminal_lessons', JSON.stringify(lessons));
+                localStorage.setItem('terminal_cap', domCache.capitalInput.value);
+                localStorage.setItem('terminal_hld', domCache.holdingsInput.value);
+                localStorage.setItem('terminal_cash', domCache.cashInput.value);
+                localStorage.setItem('terminal_fee_gateway', document.getElementById('fee-gateway').value);
+                localStorage.setItem('terminal_fee_squareoff', document.getElementById('fee-squareoff').value);
+                localStorage.setItem('terminal_fee_dp', document.getElementById('fee-dp').value);
+                localStorage.setItem('terminal_fee_trade', document.getElementById('fee-trade').value);
+            } catch (e) {
+                console.error('Failed to save data:', e);
+            }
+        }
+
+        function resetData() {
+            if(confirm("Are you sure you want to delete all data? This cannot be undone.")) {
+                try {
+                    localStorage.clear();
+                    location.reload();
+                } catch (e) {
+                    console.error('Failed to reset data:', e);
+                    alert('Failed to reset data');
+                }
+            }
+        }
+        
+        function exportData() {
+            try {
+                const headers = ['Date', 'Stock', 'Type', 'Action', 'Qty', 'Entry Price', 'Current Price', 'P&L'];
+                const csvData = trades.map(t => {
+                    const pnl = (t.qty * (t.currentPrice || 0)) - (t.qty * t.price) - (t.charges || 0);
+                    return [t.date, t.stock, t.type, t.action, t.qty, t.price, t.currentPrice || 0, pnl];
+                });
+                const csv = [headers, ...csvData].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.href = url;
+                link.download = `capital_sync_export_${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                console.error('Export failed:', e);
+                alert('Failed to export data');
+            }
+        }
+        
+        // EVENT LISTENERS
+        function attachEventListeners() {
+            // Modal backdrop click
+            domCache.tradeModal.addEventListener('click', (e) => {
+                if (e.target.id === 'trade-modal') {
+                    closeTradeModal();
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!domCache.stockDropdown.contains(e.target) && e.target !== domCache.stockInput) {
+                    domCache.stockDropdown.classList.add('hidden');
+                }
+            });
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                // Escape to close modal
+                if (e.key === 'Escape' && !domCache.tradeModal.classList.contains('hidden')) {
+                    closeTradeModal();
+                }
+            });
+            
+            // Enter to submit modal
+            document.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && currentModalType && !domCache.tradeModal.classList.contains('hidden')) {
+                    e.preventDefault();
+                    submitTradeModal();
+                }
+            });
+            
+            // Enter to add lesson
+            domCache.lessonInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addLesson();
+                }
+            });
+        }
+
+        // INITIALIZATION
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
+        
+        // Load persistence data
+        function loadPersistenceData() {
+            try {
+                domCache.capitalInput.value = localStorage.getItem('terminal_cap') || 0;
+                domCache.holdingsInput.value = localStorage.getItem('terminal_hld') || 0;
+                domCache.cashInput.value = localStorage.getItem('terminal_cash') || 0;
+                document.getElementById('fee-gateway').value = localStorage.getItem('terminal_fee_gateway') || 0;
+                document.getElementById('fee-squareoff').value = localStorage.getItem('terminal_fee_squareoff') || 0;
+                document.getElementById('fee-dp').value = localStorage.getItem('terminal_fee_dp') || 0;
+                document.getElementById('fee-trade').value = localStorage.getItem('terminal_fee_trade') || 0;
+            } catch (e) {
+                console.warn('Could not load persistence data:', e);
+            }
+        }
+        
+        // Updated initialize function
+        const originalInit = initializeApp;
+        initializeApp = function() {
+            loadPersistenceData();
+            originalInit();
+        };
+    </script>
+
+    <!-- Signature Footer -->
+    <div class="mt-20 pt-12 pb-20 border-t border-white/10">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="glass-card p-8">
+                <div class="text-center">
+                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">📋 Created By</h3>
+                    <p class="text-lg font-bold text-slate-100 mb-6">Midun Surya.T</p>
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-8 text-sm text-slate-400">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">📱</span>
+                            <a href="tel:+919791247646" class="hover:text-indigo-400 transition">+91 9791247646</a>
+                        </div>
+                        <div class="w-1 h-1 rounded-full bg-slate-600 hidden sm:block"></div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">📧</span>
+                            <a href="mailto:midun.surya07@gmail.com" class="hover:text-indigo-400 transition">midun.surya07@gmail.com</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
