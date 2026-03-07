@@ -17,22 +17,11 @@
             --card: #1e293b;
         }
 
-        * {
-            box-sizing: border-box;
-        }
-
-        html {
-            font-size: 16px;
-            line-height: 1.6;
-        }
-
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             background-color: #0b0f1a;
             color: #f1f5f9;
             letter-spacing: -0.01em;
-            line-height: 1.5;
-            min-height: 100vh;
         }
 
         .glass-card { 
@@ -54,7 +43,6 @@
         
         input[type="number"], input[type="text"], input[type="date"], select {
             font-family: inherit;
-            font-size: 14px;
         }
         
         input[type="date"] {
@@ -63,23 +51,21 @@
         
         .table-header {
             background-color: rgba(15, 23, 42, 0.5);
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             text-transform: uppercase;
             font-weight: 800;
             color: #64748b;
             letter-spacing: 0.1em;
-            line-height: 1.4;
         }
 
         .input-minimal {
             background: transparent;
             border-radius: 6px;
-            padding: 6px 10px;
+            padding: 4px 8px;
             outline: none;
             width: 100%;
             color: inherit;
             transition: all 0.2s;
-            font-size: 14px;
         }
         
         .input-minimal:focus {
@@ -97,33 +83,11 @@
         .circle-bg { stroke: rgba(255,255,255,0.03); }
 
         .badge {
-            padding: 6px 12px;
+            padding: 4px 10px;
             border-radius: 8px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 800;
             text-transform: uppercase;
-            line-height: 1.3;
-        }
-
-        /* Responsive improvements */
-        @media (max-width: 1920px) {
-            body {
-                font-size: 15px;
-            }
-            .text-3xl { font-size: 1.8rem !important; }
-            .text-lg { font-size: 1.1rem !important; }
-            .text-base { font-size: 1rem !important; }
-            .text-sm { font-size: 0.9rem !important; }
-            .text-xs { font-size: 0.8rem !important; }
-            
-            .px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
-            .py-3 { padding-top: 0.8rem !important; padding-bottom: 0.8rem !important; }
-            .gap-4 { gap: 1rem !important; }
-            .gap-6 { gap: 1.4rem !important; }
-            .gap-8 { gap: 1.6rem !important; }
-            .mb-6 { margin-bottom: 1.4rem !important; }
-            .mb-12 { margin-bottom: 2rem !important; }
-            .space-y-4 > * + * { margin-top: 0.8rem !important; }
         }
 
         /* Fixed Column Widths */
@@ -191,11 +155,11 @@
         }
     </style>
 </head>
-<body class="p-3 md:p-6 lg:p-8">
+<body class="p-4 md:p-8 lg:p-12">
     <div class="max-w-[1600px] mx-auto">
         
         <!-- Top Nav / Branding -->
-        <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 mb-8 md:mb-10">
+        <header class="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
             <div>
                 <div class="flex items-center gap-4 mb-2">
                     <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-500/20">
@@ -265,7 +229,7 @@
         </div>
 
         <!-- KPI Grid -->
-        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mb-8">
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             <div class="glass-card p-8">
                 <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4" id="label-capital">Initial Capital</p>
                 <div class="flex items-baseline gap-2">
@@ -300,9 +264,9 @@
         </section>
 
         <!-- Main Layout -->
-        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 md:gap-7">
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
             
-            <div class="xl:col-span-8 space-y-5 md:space-y-6">
+            <div class="xl:col-span-8 space-y-8">
                 <!-- CNC Section -->
                 <div class="glass-card overflow-hidden">
                     <div class="px-8 py-6 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/5">
@@ -382,7 +346,7 @@
             </div>
 
             <!-- Analytics Sidebar -->
-            <div class="xl:col-span-4 space-y-5 md:space-y-6">
+            <div class="xl:col-span-4 space-y-8">
                 
                 <!-- Circular Gauges -->
                 <div class="glass-card p-8">
