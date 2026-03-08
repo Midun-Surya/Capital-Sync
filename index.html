@@ -161,7 +161,7 @@
         /* Table column optimization */
         table td:nth-child(1) { width: 28px; padding: 6px 4px; }
         table td:nth-child(2) { width: 35px; padding: 6px 4px; text-align: center; }
-        table td:nth-child(3) { min-width: 170px; padding: 6px 8px; }
+        table td:nth-child(3) { min-width: 200px; padding: 6px 8px; }
         table td:nth-child(4) { width: 85px; padding: 6px 6px; }
         table td:nth-child(5) { width: 65px; padding: 6px 4px; }
         table td:nth-child(6) { width: 70px; padding: 6px 6px; text-align: right; }
@@ -169,6 +169,24 @@
         table td:nth-child(8) { width: 90px; padding: 6px 6px; text-align: right; }
         table td:nth-child(9) { width: 130px; padding: 6px 8px; text-align: right; }
         table td:nth-child(10) { width: 60px; padding: 6px 4px; text-align: center; }
+        
+        /* Date input styling */
+        input[type="date"] {
+            position: relative;
+            z-index: 10;
+        }
+        
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            border-radius: 4px;
+            margin-right: 2px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        
+        input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
 
         .autocomplete-dropdown {
             position: absolute;
@@ -745,7 +763,7 @@
                 const rowNumber = isCnc ? cncCount : misCount;
                 
                 const dateCell = isCnc 
-                    ? `<input type="date" value="${trade.date}" class="bg-transparent text-slate-400 font-bold outline-none cursor-pointer text-xs" style="width: 75px;" onchange="updateTrade(${index}, 'date', this.value)"> <span class="text-slate-500 text-xs">→</span> <input type="date" value="${trade.endDate || trade.date}" class="bg-transparent text-slate-400 font-bold outline-none cursor-pointer text-xs" style="width: 75px;" onchange="updateTrade(${index}, 'endDate', this.value)">`
+                    ? `<input type="date" value="${trade.date}" class="bg-transparent text-slate-400 font-bold outline-none cursor-pointer text-xs" style="width: 90px;" onchange="updateTrade(${index}, 'date', this.value)"> <span class="text-slate-500 text-xs">→</span> <input type="date" value="${trade.endDate || trade.date}" class="bg-transparent text-slate-400 font-bold outline-none cursor-pointer text-xs" style="width: 90px;" onchange="updateTrade(${index}, 'endDate', this.value)">`
                     : `<input type="date" value="${trade.date}" class="bg-transparent text-slate-400 font-bold outline-none cursor-pointer text-xs" style="width: 100%;" onchange="updateTrade(${index}, 'date', this.value)">`;
                 
                 row.innerHTML = `
