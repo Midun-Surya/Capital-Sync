@@ -181,6 +181,15 @@
             position: relative;
             z-index: 10;
             padding-right: 28px !important;
+            min-width: 130px;
+        }
+        
+        /* Mobile responsiveness for date inputs */
+        @media (max-width: 768px) {
+            input[type="date"] {
+                min-width: 140px !important;
+                width: 140px !important;
+            }
         }
         
         input[type="date"]::-webkit-calendar-picker-indicator {
