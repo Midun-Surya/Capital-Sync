@@ -346,7 +346,7 @@
                                 <tr>
                                     <th class="px-3 py-3 text-center" style="width: 32px;"></th>
                                     <th class="px-3 py-3 text-center" style="width: 40px;">#</th>
-                                    <th class="px-3 py-3">Added</th>
+                                    <th class="px-3 py-3">Holding Period</th>
                                     <th class="px-3 py-3">Security</th>
                                     <th class="px-3 py-3 text-center">Side</th>
                                     <th class="px-3 py-3 text-right">Units</th>
@@ -672,9 +672,32 @@
 
         function updateChartData() {
             if (!pnlChart) return;
-            const sortedTrades = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
-            const labels = sortedTrades.map(t => new Date(t.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));
-            const data = sortedTrades.map(t => (t.qty * (t.currentPrice || 0)) - (t.qty * t.price) - (t.charges || 0));
+            
+            // Combine all trades and sort by date
+            const allTrades = trades.map(t => ({
+                ...t,
+                displayDate: t.date,
+                endDisplayDate: t.endDate || t.date
+            })).sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            // Group by date (use start date for CNC, single date for MIS)
+            const groupedByDate = {};
+            allTrades.forEach(trade => {
+                const dateKey = trade.date;
+                if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
+                groupedByDate[dateKey].push(trade);
+            });
+            
+            const labels = Object.keys(groupedByDate).map(d => 
+                new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })
+            );
+            
+            const data = Object.keys(groupedByDate).map(dateKey => {
+                return groupedByDate[dateKey].reduce((sum, t) => {
+                    const pnl = (t.qty * (t.currentPrice || 0)) - (t.qty * t.price) - (t.charges || 0);
+                    return sum + pnl;
+                }, 0);
+            });
             
             pnlChart.data.labels = labels;
             pnlChart.data.datasets[0].data = data;
@@ -712,7 +735,7 @@
                 row.innerHTML = `
                     <td class="px-3 py-3 text-center text-slate-600 cursor-grab active:cursor-grabbing select-none drag-handle" style="user-select: none; width: 32px;">⋮</td>
                     <td class="px-3 py-3 text-center text-slate-600 mono font-bold" style="width: 40px;">${rowNumber}</td>
-                    <td class="px-3 py-3"><input type="date" value="${trade.date}" class="bg-transparent text-slate-400 font-bold outline-none w-full cursor-pointer" onchange="updateTrade(${index}, 'date', this.value)"></td>
+                    <td class="px-3 py-3"><input type="date" value="${trade.date}" class="bg-transparent text-slate-400 font-bold outline-none cursor-pointer" style="width: calc(50% - 4px);" onchange="updateTrade(${index}, 'date', this.value)"> <span class="text-slate-500">to</span> <input type="date" value="${trade.endDate || trade.date}" class="bg-transparent text-slate-400 font-bold outline-none cursor-pointer" style="width: calc(50% - 4px);" onchange="updateTrade(${index}, 'endDate', this.value)"></td>
                     <td class="px-3 py-3 font-bold uppercase tracking-tight text-slate-200">${trade.stock}</td>
                     <td class="px-3 py-3 text-center font-black ${trade.action === 'Buy' ? 'text-indigo-400' : 'text-orange-400'}">${trade.action === 'Buy' ? 'BUY' : 'SELL'}</td>
                     <td class="px-3 py-3 text-right mono">${trade.qty}</td>
@@ -848,7 +871,8 @@
             const editIndex = domCache.tradeModal.dataset.editIndex;
             if (editIndex !== undefined) {
                 trades[editIndex] = {
-                    date: trades[editIndex].date,
+                    date: domCache.tradeModal.dataset.startDate,
+                    endDate: domCache.tradeModal.dataset.endDate,
                     stock: stock,
                     type: currentModalType,
                     action: action,
@@ -858,6 +882,8 @@
                     charges: trades[editIndex].charges || 0
                 };
                 delete domCache.tradeModal.dataset.editIndex;
+                delete domCache.tradeModal.dataset.startDate;
+                delete domCache.tradeModal.dataset.endDate;
             } else {
                 addTradeWithValues(currentModalType, stock, action, qty, price, current);
             }
@@ -873,8 +899,10 @@
         }
         
         function addTradeWithValues(type, stock, action, qty, price, currentPrice) {
+            const today = new Date().toISOString().split('T')[0];
             trades.push({ 
                 date: new Date().toISOString().split('T')[0], 
+                endDate: type === 'CNC' ? null : today,
                 stock: stock || '', 
                 type: type, 
                 action: action || 'Buy', 
@@ -888,7 +916,7 @@
         }
 
         function addTradeRow(type) {
-            trades.push({ date: new Date().toISOString().split('T')[0], stock: '', type: type, action: 'Buy', qty: 0, price: 0, currentPrice: 0, charges: 0 });
+            trades.push({ date: new Date().toISOString().split('T')[0], endDate: null, stock: '', type: type, action: 'Buy', qty: 0, price: 0, currentPrice: 0, charges: 0 });
             renderTrades();
             updateSummary();
         }
@@ -901,7 +929,12 @@
             document.getElementById('modal-price').value = trade.price;
             document.getElementById('modal-current').value = trade.currentPrice || 0;
             currentModalType = trade.type;
+            
+            // Store start and end dates in modal dataset
             domCache.tradeModal.dataset.editIndex = index;
+            domCache.tradeModal.dataset.startDate = trade.date;
+            domCache.tradeModal.dataset.endDate = trade.endDate || trade.date;
+            
             domCache.tradeModal.classList.remove('hidden');
             domCache.stockInput.focus();
         }
