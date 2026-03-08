@@ -537,6 +537,20 @@
                         <button onclick="addLesson()" class="absolute right-2 top-1/2 -translate-y-1/2 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white rounded-md px-2.5 py-1.5 font-semibold text-xs transition-all" title="Add insight (Enter key also works)" aria-label="Add lesson">Add</button>
                     </div>
                 </div>
+
+                <!-- Data Sync -->
+                <div class="glass-card p-8">
+                    <h3 class="text-[11px] font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div> Data Sync
+                    </h3>
+                    <div class="space-y-3">
+                        <button onclick="exportData()" class="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 active:from-green-700 active:to-green-600 text-white font-semibold py-2.5 px-4 rounded-lg transition-all text-xs uppercase tracking-wide">↓ Export Trades</button>
+                        <label class="w-full block">
+                            <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)">
+                            <button type="button" onclick="document.getElementById('import-file').click()" class="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 active:from-blue-700 active:to-blue-600 text-white font-semibold py-2.5 px-4 rounded-lg transition-all text-xs uppercase tracking-wide">↑ Import Trades</button>
+                        </label>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2403,6 +2417,90 @@
             } catch (e) {
                 console.error('Failed to save data:', e);
             }
+        }
+
+        // EXPORT DATA
+        function exportData() {
+            try {
+                const exportObj = {
+                    timestamp: new Date().toISOString(),
+                    trades: trades,
+                    lessons: lessons,
+                    capital: domCache.capitalInput.value,
+                    holdings: domCache.holdingsInput.value,
+                    cash: domCache.cashInput.value,
+                    fees: {
+                        gateway: document.getElementById('fee-gateway').value,
+                        squareoff: document.getElementById('fee-squareoff').value,
+                        dp: document.getElementById('fee-dp').value,
+                        trade: document.getElementById('fee-trade').value
+                    }
+                };
+                
+                const dataJson = JSON.stringify(exportObj, null, 2);
+                const blob = new Blob([dataJson], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `CapitalSync-Export-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                alert('✓ Trades exported successfully!');
+            } catch (e) {
+                alert('Error exporting data: ' + e.message);
+                console.error('Export failed:', e);
+            }
+        }
+
+        // IMPORT DATA
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importObj = JSON.parse(e.target.result);
+                    
+                    // Validate imported data
+                    if (!importObj.trades || !Array.isArray(importObj.trades)) {
+                        throw new Error('Invalid trades data');
+                    }
+                    
+                    // Confirm before overwriting
+                    if (confirm('This will replace your current data. Continue?')) {
+                        trades = importObj.trades;
+                        lessons = importObj.lessons || [];
+                        
+                        domCache.capitalInput.value = importObj.capital || '0';
+                        domCache.holdingsInput.value = importObj.holdings || '0';
+                        domCache.cashInput.value = importObj.cash || '0';
+                        
+                        document.getElementById('fee-gateway').value = importObj.fees?.gateway || '0';
+                        document.getElementById('fee-squareoff').value = importObj.fees?.squareoff || '0';
+                        document.getElementById('fee-dp').value = importObj.fees?.dp || '0';
+                        document.getElementById('fee-trade').value = importObj.fees?.trade || '0';
+                        
+                        save();
+                        renderTrades();
+                        renderLessons();
+                        updateSummary();
+                        
+                        alert('✓ Data imported successfully! (' + trades.length + ' trades loaded)');
+                    }
+                    
+                    // Reset file input
+                    event.target.value = '';
+                } catch (e) {
+                    alert('Error importing data: ' + e.message);
+                    console.error('Import failed:', e);
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
         }
 
         function resetData() {
