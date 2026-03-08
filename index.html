@@ -133,7 +133,7 @@
             }
             
             table td, table th {
-                padding: 6px 6px !important;
+                padding: 5px 4px !important;
             }
             
             .overflow-x-auto table {
@@ -147,16 +147,28 @@
             }
             
             table td, table th {
-                padding: 5px 4px !important;
+                padding: 4px 3px !important;
             }
         }
 
         /* Fixed Column Widths */
-        .col-date { width: 130px; }
+        .col-date { width: 140px; }
         .col-side { width: 100px; }
-        .col-qty { width: 90px; }
-        .col-price { width: 110px; }
-        .col-pnl { width: 160px; }
+        .col-qty { width: 80px; }
+        .col-price { width: 100px; }
+        .col-pnl { width: 150px; }
+        
+        /* Table column optimization */
+        table td:nth-child(1) { width: 28px; padding: 6px 4px; }
+        table td:nth-child(2) { width: 35px; padding: 6px 4px; text-align: center; }
+        table td:nth-child(3) { min-width: 170px; padding: 6px 8px; }
+        table td:nth-child(4) { width: 85px; padding: 6px 6px; }
+        table td:nth-child(5) { width: 65px; padding: 6px 4px; }
+        table td:nth-child(6) { width: 70px; padding: 6px 6px; text-align: right; }
+        table td:nth-child(7) { width: 90px; padding: 6px 6px; text-align: right; }
+        table td:nth-child(8) { width: 90px; padding: 6px 6px; text-align: right; }
+        table td:nth-child(9) { width: 130px; padding: 6px 8px; text-align: right; }
+        table td:nth-child(10) { width: 60px; padding: 6px 4px; text-align: center; }
 
         .autocomplete-dropdown {
             position: absolute;
@@ -733,20 +745,20 @@
                 const rowNumber = isCnc ? cncCount : misCount;
                 
                 const dateCell = isCnc 
-                    ? `<input type="date" value="${trade.date}" class="bg-transparent text-slate-400 font-bold outline-none cursor-pointer" style="width: calc(50% - 4px);" onchange="updateTrade(${index}, 'date', this.value)"> <span class="text-slate-500">to</span> <input type="date" value="${trade.endDate || trade.date}" class="bg-transparent text-slate-400 font-bold outline-none cursor-pointer" style="width: calc(50% - 4px);" onchange="updateTrade(${index}, 'endDate', this.value)">`
-                    : `<input type="date" value="${trade.date}" class="bg-transparent text-slate-400 font-bold outline-none cursor-pointer" style="width: 100%;" onchange="updateTrade(${index}, 'date', this.value)">`;
+                    ? `<input type="date" value="${trade.date}" class="bg-transparent text-slate-400 font-bold outline-none cursor-pointer text-xs" style="width: 75px;" onchange="updateTrade(${index}, 'date', this.value)"> <span class="text-slate-500 text-xs">→</span> <input type="date" value="${trade.endDate || trade.date}" class="bg-transparent text-slate-400 font-bold outline-none cursor-pointer text-xs" style="width: 75px;" onchange="updateTrade(${index}, 'endDate', this.value)">`
+                    : `<input type="date" value="${trade.date}" class="bg-transparent text-slate-400 font-bold outline-none cursor-pointer text-xs" style="width: 100%;" onchange="updateTrade(${index}, 'date', this.value)">`;
                 
                 row.innerHTML = `
-                    <td class="px-3 py-3 text-center text-slate-600 cursor-grab active:cursor-grabbing select-none drag-handle" style="user-select: none; width: 32px;">⋮</td>
-                    <td class="px-3 py-3 text-center text-slate-600 mono font-bold" style="width: 40px;">${rowNumber}</td>
-                    <td class="px-3 py-3">${dateCell}</td>
-                    <td class="px-3 py-3 font-bold uppercase tracking-tight text-slate-200">${trade.stock}</td>
-                    <td class="px-3 py-3 text-center font-black ${trade.action === 'Buy' ? 'text-indigo-400' : 'text-orange-400'}">${trade.action === 'Buy' ? 'BUY' : 'SELL'}</td>
-                    <td class="px-3 py-3 text-right mono">${trade.qty}</td>
-                    <td class="px-3 py-3 text-right mono">₹${parseFloat(trade.price).toFixed(2)}</td>
-                    <td class="px-3 py-3 text-right mono font-bold ${isCnc ? 'text-indigo-400' : 'text-orange-400'}">₹${parseFloat(trade.currentPrice || 0).toFixed(2)}</td>
-                    <td class="px-4 py-3 text-right font-bold mono ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">₹${pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                    <td class="px-2 py-3 text-center" style="width: 64px;"><button onclick="editTrade(${index})" class="text-slate-600 hover:text-indigo-400 font-bold text-lg mr-1">✎</button><button onclick="removeTrade(${index})" class="text-slate-600 hover:text-rose-500 font-bold text-lg">×</button></td>
+                    <td class="px-1 py-2 text-center text-slate-600 cursor-grab active:cursor-grabbing select-none drag-handle" style="user-select: none;">⋮</td>
+                    <td class="px-1 py-2 text-center text-slate-600 mono font-bold text-xs">${rowNumber}</td>
+                    <td class="px-2 py-2">${dateCell}</td>
+                    <td class="px-2 py-2 font-bold uppercase tracking-tight text-slate-200 text-xs">${trade.stock}</td>
+                    <td class="px-1 py-2 text-center font-black text-xs ${trade.action === 'Buy' ? 'text-indigo-400' : 'text-orange-400'}">${trade.action === 'Buy' ? 'BUY' : 'SELL'}</td>
+                    <td class="px-2 py-2 text-right mono text-xs">${trade.qty}</td>
+                    <td class="px-2 py-2 text-right mono text-xs">₹${parseFloat(trade.price).toFixed(2)}</td>
+                    <td class="px-2 py-2 text-right mono font-bold text-xs ${isCnc ? 'text-indigo-400' : 'text-orange-400'}">₹${parseFloat(trade.currentPrice || 0).toFixed(2)}</td>
+                    <td class="px-2 py-2 text-right font-bold mono text-xs ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">₹${pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td class="px-1 py-2 text-center"><button onclick="editTrade(${index})" class="text-slate-600 hover:text-indigo-400 font-bold text-sm mr-1" title="Edit">✎</button><button onclick="removeTrade(${index})" class="text-slate-600 hover:text-rose-500 font-bold text-sm" title="Delete">×</button></td>
                 `;
                 
                 if (isCnc) {
