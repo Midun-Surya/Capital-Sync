@@ -626,6 +626,7 @@
         function initializeApp() {
             loadDataFromStorage();
             cacheDOM();
+            loadPersistenceData();
             initChart();
             renderTrades();
             renderLessons();
@@ -718,7 +719,7 @@
                     <td class="px-3 py-3 text-right mono">₹${parseFloat(trade.price).toFixed(2)}</td>
                     <td class="px-3 py-3 text-right mono font-bold ${isCnc ? 'text-indigo-400' : 'text-orange-400'}">₹${parseFloat(trade.currentPrice || 0).toFixed(2)}</td>
                     <td class="px-4 py-3 text-right font-bold mono ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">₹${pnl.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
-                    <td class="px-2 py-3 text-center" style="width: 32px;"><button onclick="removeTrade(${index})" class="text-slate-600 hover:text-rose-500 font-bold text-lg">×</button></td>
+                    <td class="px-2 py-3 text-center" style="width: 64px;"><button onclick="editTrade(${index})" class="text-slate-600 hover:text-indigo-400 font-bold text-lg mr-1">✎</button><button onclick="removeTrade(${index})" class="text-slate-600 hover:text-rose-500 font-bold text-lg">×</button></td>
                 `;
                 
                 if (isCnc) {
@@ -844,7 +845,24 @@
                 return;
             }
             
-            addTradeWithValues(currentModalType, stock, action, qty, price, current);
+            const editIndex = domCache.tradeModal.dataset.editIndex;
+            if (editIndex !== undefined) {
+                trades[editIndex] = {
+                    date: trades[editIndex].date,
+                    stock: stock,
+                    type: currentModalType,
+                    action: action,
+                    qty: qty,
+                    price: price,
+                    currentPrice: current,
+                    charges: trades[editIndex].charges || 0
+                };
+                delete domCache.tradeModal.dataset.editIndex;
+            } else {
+                addTradeWithValues(currentModalType, stock, action, qty, price, current);
+            }
+            renderTrades();
+            updateSummary();
             closeTradeModal();
         }
 
@@ -875,6 +893,19 @@
             updateSummary();
         }
 
+        function editTrade(index) {
+            const trade = trades[index];
+            domCache.stockInput.value = trade.stock;
+            document.getElementById('modal-action').value = trade.action;
+            document.getElementById('modal-qty').value = trade.qty;
+            document.getElementById('modal-price').value = trade.price;
+            document.getElementById('modal-current').value = trade.currentPrice || 0;
+            currentModalType = trade.type;
+            domCache.tradeModal.dataset.editIndex = index;
+            domCache.tradeModal.classList.remove('hidden');
+            domCache.stockInput.focus();
+        }
+        
         function removeTrade(index) { trades.splice(index, 1); renderTrades(); updateSummary(); }
 
         // SUMMARY & CALCULATIONS
@@ -1013,6 +1044,15 @@
         
         // EVENT LISTENERS
         function attachEventListeners() {
+            // Auto-save on input change for all form fields
+            domCache.capitalInput.addEventListener('input', save);
+            domCache.holdingsInput.addEventListener('input', save);
+            domCache.cashInput.addEventListener('input', save);
+            document.getElementById('fee-gateway').addEventListener('input', save);
+            document.getElementById('fee-squareoff').addEventListener('input', save);
+            document.getElementById('fee-dp').addEventListener('input', save);
+            document.getElementById('fee-trade').addEventListener('input', save);
+            
             // Modal backdrop click
             domCache.tradeModal.addEventListener('click', (e) => {
                 if (e.target.id === 'trade-modal') {
@@ -1074,12 +1114,7 @@
             }
         }
         
-        // Updated initialize function
-        const originalInit = initializeApp;
-        initializeApp = function() {
-            loadPersistenceData();
-            originalInit();
-        };
+
     </script>
 
     <!-- Signature Footer -->
