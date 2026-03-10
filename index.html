@@ -2003,22 +2003,78 @@
         let pnlChart = null;
         let draggedIndex = null;
         let currentModalType = null;
+        let autoSaveTimer = null;
+        let toastTimeout = null;
+        
+        // Toast notification system
+        function showToast(message, type = 'info', duration = 3000) {
+            clearTimeout(toastTimeout);
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-emerald-500' : type === 'error' ? 'bg-rose-500' : 'bg-indigo-500';
+            toast.innerHTML = `
+                <div class="fixed bottom-6 right-6 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50 animate-pulse">
+                    <span>${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</span>
+                    <span>${message}</span>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            toastTimeout = setTimeout(() => toast.remove(), duration);
+        }
         
         // Initialize app
         function initializeApp() {
-            loadDataFromStorage();
-            cacheDOM();
-            loadPersistenceData();
-            initChart();
-            renderTrades();
-            renderLessons();
-            updateSummary();
-            attachEventListeners();
+            try {
+                loadDataFromStorage();
+                cacheDOM();
+                loadPersistenceData();
+                initChart();
+                renderTrades();
+                renderLessons();
+                updateSummary();
+                attachEventListeners();
+                startLivePrices();
+                
+                const lastSaved = localStorage.getItem('terminal_last_saved');
+                if (lastSaved) {
+                    console.log(`Last saved: ${new Date(lastSaved).toLocaleString()}`);
+                }
+                
+                showToast('CapitalSync Pro loaded', 'success', 2000);
+            } catch (e) {
+                console.error('Failed to initialize app:', e);
+                showToast('Failed to initialize - please refresh', 'error', 5000);
+            }
         }
         
         function loadDataFromStorage() {
-            trades = JSON.parse(localStorage.getItem('terminal_trades')) || [];
-            lessons = JSON.parse(localStorage.getItem('terminal_lessons')) || [];
+            try {
+                const storedTrades = localStorage.getItem('terminal_trades');
+                const storedLessons = localStorage.getItem('terminal_lessons');
+                
+                trades = storedTrades ? JSON.parse(storedTrades) : [];
+                lessons = storedLessons ? JSON.parse(storedLessons) : [];
+                
+                // Validate and fix data structure
+                trades = trades.map(trade => ({
+                    date: trade.date || new Date().toISOString().split('T')[0],
+                    endDate: trade.endDate || trade.date || new Date().toISOString().split('T')[0],
+                    stock: trade.stock || '',
+                    type: trade.type || 'MIS',
+                    action: trade.action || 'Buy',
+                    qty: Math.max(0, trade.qty || 0),
+                    price: Math.max(0, trade.price || 0),
+                    currentPrice: Math.max(0, trade.currentPrice || 0),
+                    charges: Math.max(0, trade.charges || 0),
+                    lastModified: trade.lastModified || new Date().toISOString()
+                }));
+                
+                if (storedTrades) console.log(`✓ Loaded ${trades.length} trades`);
+            } catch (e) {
+                console.error('Error loading data:', e);
+                trades = [];
+                lessons = [];
+                showToast('Error loading saved data - starting fresh', 'error', 4000);
+            }
         }
 
         // CHART MANAGEMENT
@@ -2107,17 +2163,18 @@
         }
 
         function renderTrades() {
-            domCache.cncBody.innerHTML = '';
-            domCache.misBody.innerHTML = '';
-            
-            let cncCount = 1;
-            let misCount = 1;
-            
-            trades.forEach((trade, index) => {
-                const { pnl } = calculateTradeMetrics(trade);
-                const row = document.createElement('tr');
-                row.className = "hover:bg-white/[0.02] transition-colors text-[11px] text-slate-300 cursor-grab active:cursor-grabbing";
-                row.draggable = true;
+            try {
+                domCache.cncBody.innerHTML = '';
+                domCache.misBody.innerHTML = '';
+                
+                let cncCount = 1;
+                let misCount = 1;
+                
+                trades.forEach((trade, index) => {
+                    const { pnl } = calculateTradeMetrics(trade);
+                    const row = document.createElement('tr');
+                    row.className = "hover:bg-white/[0.02] transition-colors text-[11px] text-slate-300 cursor-grab active:cursor-grabbing";
+                    row.draggable = true;
                 row.dataset.index = index;
                 
                 row.addEventListener('dragstart', handleDragStart);
@@ -2259,12 +2316,17 @@
             // Validation
             const errors = [];
             if (!stock) errors.push('Security symbol is required');
+            if (!stocksList.some(s => s.symbol === stock)) errors.push('Stock symbol not found in list');
             if (qty <= 0) errors.push('Quantity must be greater than 0');
-            if (price < 0) errors.push('Entry price cannot be negative');
+            if (price <= 0) errors.push('Entry price must be greater than 0');
             if (current < 0) errors.push('Current price cannot be negative');
+            if (price > current * 2 || price < current * 0.5) {
+                // Warning for unusual price movements but allow
+                console.warn('Price movement seems unusual');
+            }
             
             if (errors.length > 0) {
-                alert('Please fix the following errors:\n' + errors.join('\n'));
+                showToast(errors[0], 'error', 4000);
                 return;
             }
             
@@ -2279,13 +2341,16 @@
                     qty: qty,
                     price: price,
                     currentPrice: current,
-                    charges: trades[editIndex].charges || 0
+                    charges: trades[editIndex].charges || 0,
+                    lastModified: new Date().toISOString()
                 };
                 delete domCache.tradeModal.dataset.editIndex;
                 delete domCache.tradeModal.dataset.startDate;
                 delete domCache.tradeModal.dataset.endDate;
+                showToast(`Trade updated: ${stock}`, 'success');
             } else {
                 addTradeWithValues(currentModalType, stock, action, qty, price, current);
+                showToast(`Trade added: ${stock}`, 'success');
             }
             renderTrades();
             updateSummary();
@@ -2293,32 +2358,67 @@
         }
 
         function updateTrade(index, field, value, fullRefresh = false) {
-            trades[index][field] = (['qty', 'price', 'charges', 'currentPrice'].includes(field)) ? parseFloat(value) || 0 : value;
-            updateSummary();
-            save();
+            try {
+                trades[index][field] = (['qty', 'price', 'charges', 'currentPrice'].includes(field)) ? parseFloat(value) || 0 : value;
+                trades[index].lastModified = new Date().toISOString();
+                updateSummary();
+                save();
+            } catch (e) {
+                showToast('Error updating trade', 'error');
+                console.error('Update error:', e);
+            }
         }
         
         function addTradeWithValues(type, stock, action, qty, price, currentPrice) {
-            const today = new Date().toISOString().split('T')[0];
-            trades.push({ 
-                date: new Date().toISOString().split('T')[0], 
-                endDate: type === 'CNC' ? null : today,
-                stock: stock || '', 
-                type: type, 
-                action: action || 'Buy', 
-                qty: parseFloat(qty) || 0, 
-                price: parseFloat(price) || 0, 
-                currentPrice: parseFloat(currentPrice) || 0, 
-                charges: 0 
-            });
-            renderTrades();
-            updateSummary();
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const newTrade = {
+                    date: today,
+                    endDate: type === 'CNC' ? null : today,
+                    stock: stock.toUpperCase().trim(),
+                    type: type || 'MIS',
+                    action: action || 'Buy',
+                    qty: Math.max(0, parseFloat(qty) || 0),
+                    price: Math.max(0, parseFloat(price) || 0),
+                    currentPrice: Math.max(0, parseFloat(currentPrice) || 0),
+                    charges: 0,
+                    createdAt: new Date().toISOString(),
+                    lastModified: new Date().toISOString()
+                };
+                
+                if (newTrade.qty === 0 || newTrade.price === 0) {
+                    showToast('Quantity and price must be greater than 0', 'error');
+                    return;
+                }
+                
+                trades.push(newTrade);
+                save();
+                renderTrades();
+                updateSummary();
+            } catch (e) {
+                showToast('Error adding trade', 'error');
+                console.error('Add trade error:', e);
+            }
         }
 
         function addTradeRow(type) {
-            trades.push({ date: new Date().toISOString().split('T')[0], endDate: null, stock: '', type: type, action: 'Buy', qty: 0, price: 0, currentPrice: 0, charges: 0 });
+            const today = new Date().toISOString().split('T')[0];
+            trades.push({
+                date: today,
+                endDate: null,
+                stock: '',
+                type: type,
+                action: 'Buy',
+                qty: 0,
+                price: 0,
+                currentPrice: 0,
+                charges: 0,
+                createdAt: new Date().toISOString(),
+                lastModified: new Date().toISOString()
+            });
             renderTrades();
             updateSummary();
+            save();
         }
 
         function editTrade(index) {
@@ -2339,7 +2439,19 @@
             domCache.stockInput.focus();
         }
         
-        function removeTrade(index) { trades.splice(index, 1); renderTrades(); updateSummary(); }
+        function removeTrade(index) {
+            try {
+                const trade = trades[index];
+                trades.splice(index, 1);
+                renderTrades();
+                updateSummary();
+                save();
+                showToast(`Trade removed: ${trade.stock}`, 'success', 2500);
+            } catch (e) {
+                showToast('Error removing trade', 'error');
+                console.error('Remove trade error:', e);
+            }
+        }
 
         // SUMMARY & CALCULATIONS
         function updateSummary() {
@@ -2444,9 +2556,19 @@
                 localStorage.setItem('terminal_fee_squareoff', document.getElementById('fee-squareoff').value);
                 localStorage.setItem('terminal_fee_dp', document.getElementById('fee-dp').value);
                 localStorage.setItem('terminal_fee_trade', document.getElementById('fee-trade').value);
+                localStorage.setItem('terminal_last_saved', new Date().toISOString());
             } catch (e) {
+                showToast('Failed to save data', 'error', 5000);
                 console.error('Failed to save data:', e);
             }
+        }
+        
+        function autoSave() {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(() => {
+                save();
+                showToast('Auto-saved', 'success', 2000);
+            }, 5000);
         }
 
         // EXPORT DATA
@@ -2519,13 +2641,13 @@
                         renderLessons();
                         updateSummary();
                         
-                        alert('✓ Data imported successfully! (' + trades.length + ' trades loaded)');
+                        showToast(`✓ Data imported! ${trades.length} trades loaded`, 'success', 4000);
                     }
                     
                     // Reset file input
                     event.target.value = '';
                 } catch (e) {
-                    alert('Error importing data: ' + e.message);
+                    showToast('Error importing data: ' + e.message, 'error', 5000);
                     console.error('Import failed:', e);
                     event.target.value = '';
                 }
@@ -2547,14 +2669,21 @@
         
         // EVENT LISTENERS
         function attachEventListeners() {
-            // Auto-save on input change for all form fields
-            domCache.capitalInput.addEventListener('input', save);
-            domCache.holdingsInput.addEventListener('input', save);
-            domCache.cashInput.addEventListener('input', save);
-            document.getElementById('fee-gateway').addEventListener('input', save);
-            document.getElementById('fee-squareoff').addEventListener('input', save);
-            document.getElementById('fee-dp').addEventListener('input', save);
-            document.getElementById('fee-trade').addEventListener('input', save);
+            // Auto-save on input change for all form fields (with debouncing)
+            const attachAutoSave = (element) => {
+                element.addEventListener('input', () => {
+                    autoSave();
+                    updateSummary();
+                });
+            };
+            
+            attachAutoSave(domCache.capitalInput);
+            attachAutoSave(domCache.holdingsInput);
+            attachAutoSave(domCache.cashInput);
+            attachAutoSave(document.getElementById('fee-gateway'));
+            attachAutoSave(document.getElementById('fee-squareoff'));
+            attachAutoSave(document.getElementById('fee-dp'));
+            attachAutoSave(document.getElementById('fee-trade'));
             
             // Modal backdrop click
             domCache.tradeModal.addEventListener('click', (e) => {
@@ -2575,6 +2704,22 @@
                 // Escape to close modal
                 if (e.key === 'Escape' && !domCache.tradeModal.classList.contains('hidden')) {
                     closeTradeModal();
+                }
+                // Ctrl+S or Cmd+S to save
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    save();
+                    showToast('Saved successfully', 'success');
+                }
+                // Ctrl+N or Cmd+N to add new trade
+                if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                    e.preventDefault();
+                    openTradeModal('MIS');
+                }
+                // Ctrl+E or Cmd+E to export
+                if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+                    e.preventDefault();
+                    exportData();
                 }
             });
             
@@ -2602,6 +2747,23 @@
             initializeApp();
         }
         
+        // Live Price Simulation
+        function startLivePrices() {
+            setInterval(() => {
+                if (trades.length === 0) return;
+
+                trades.forEach(trade => {
+                    // Simulate a small price fluctuation
+                    const fluctuation = (Math.random() - 0.5) * 0.01; // +/- 0.5%
+                    const newPrice = trade.currentPrice * (1 + fluctuation);
+                    trade.currentPrice = Math.max(0, newPrice); // Ensure price doesn't go negative
+                });
+
+                renderTrades();
+                updateSummary();
+            }, 5000); // Update every 5 seconds
+        }
+
         // Load persistence data
         function loadPersistenceData() {
             try {
