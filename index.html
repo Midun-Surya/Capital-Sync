@@ -2076,7 +2076,12 @@
             
             const data = Object.keys(groupedByDate).map(dateKey => {
                 return groupedByDate[dateKey].reduce((sum, t) => {
-                    const pnl = (t.qty * (t.currentPrice || 0)) - (t.qty * t.price) - (t.charges || 0);
+                    let pnl;
+                    if (t.action === 'Sell') {
+                        pnl = (t.qty * t.price) - (t.qty * (t.currentPrice || 0)) - (t.charges || 0);
+                    } else {
+                        pnl = (t.qty * (t.currentPrice || 0)) - (t.qty * t.price) - (t.charges || 0);
+                    }
                     return sum + pnl;
                 }, 0);
             });
@@ -2088,7 +2093,16 @@
         
         // TRADE RENDERING
         function calculateTradeMetrics(trade) {
-            const pnl = (trade.qty * (trade.currentPrice || 0)) - (trade.qty * trade.price) - (trade.charges || 0);
+            let pnl;
+            if (trade.action === 'Sell') {
+                // For SELL trades: profit when price goes DOWN
+                // P&L = (qty * entry) - (qty * current) - charges
+                pnl = (trade.qty * trade.price) - (trade.qty * (trade.currentPrice || 0)) - (trade.charges || 0);
+            } else {
+                // For BUY trades: profit when price goes UP
+                // P&L = (qty * current) - (qty * entry) - charges
+                pnl = (trade.qty * (trade.currentPrice || 0)) - (trade.qty * trade.price) - (trade.charges || 0);
+            }
             return { pnl };
         }
 
@@ -2344,7 +2358,14 @@
             trades.forEach(trade => {
                 const exposure = trade.qty * (trade.currentPrice || 0);
                 const invested = trade.qty * trade.price;
-                const pnl = exposure - invested - (trade.charges || 0);
+                let pnl;
+                if (trade.action === 'Sell') {
+                    // For SELL trades: profit when price goes DOWN
+                    pnl = (trade.qty * trade.price) - (trade.qty * (trade.currentPrice || 0)) - (trade.charges || 0);
+                } else {
+                    // For BUY trades: profit when price goes UP
+                    pnl = exposure - invested - (trade.charges || 0);
+                }
                 totalTablePnl += pnl;
                 if (trade.type === 'MIS') misExposure += exposure; else cncExposure += exposure;
                 if (trade.qty > 0) { activeTrades++; if (pnl > 0) wins++; }
